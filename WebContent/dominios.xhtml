@@ -1,0 +1,474 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:body>
+<ui:composition template="/template/templates/templateLayout.xhtml">
+<ui:define name="scripts">
+<script src="resources/js/app/app-metamodelo.js"></script>
+</ui:define>
+<ui:define name="content">
+<f:view>
+	<h:form id="menuForm">  
+		<p:outputPanel autoUpdate="true">
+			<p:menubar widgetVar="menu">  
+			    <p:submenu  label="Archivo">  
+					<p:menuitem  disabled="#{!mModeloBean.metaModeloSeleccionado}" value="Guardar"  onclick="PF('comfirmGuardarCambios').show()"  ></p:menuitem>
+			       <p:menuitem    disabled="#{!mModeloBean.metaModeloSeleccionado}" value="Descartar cambios"  url="#"  onclick="PF('comfirmDescartarCambios').show()"></p:menuitem>
+			       
+			    </p:submenu>     
+			    <p:submenu  label="Dominios" styleClass="currentPage" >  
+			        <p:menuitem   value="Crear..."  onclick="PF('widgetNuevoMetaModelo').show();"  actionListener="#{mModeloBean.resetNuevoMetaModelo()}" url="#" ></p:menuitem>
+			        <p:menuitem   value="Editar..."  onclick="PF('widgetEditarMetaModelo').show();"  rendered="#{mModeloBean.metaModeloSeleccionado}" url="#" ></p:menuitem>
+			          
+			        <p:menuitem update=":mainpanel,:formSelectMModelos" rendered="#{mModeloBean.metaModeloSeleccionado}" ajax="false"  value="Eliminar..." onclick="PF('comfirmEliminarMetamodelo').show()" url="#" ></p:menuitem>
+			       
+			    </p:submenu>  
+				 <p:menuitem value="Anotaciones" url="anotaciones.faces" />
+				 <p:menuitem value="Videos" url="videos.faces" />
+			</p:menubar>  
+		</p:outputPanel>	
+	</h:form>
+	<h:form>
+	     <p:remoteCommand name="setMConceptoSeleccionado"  oncomplete=" $('.draggable').draggable({revert:true});" actionListener="#{mConceptoBean.rcSetMConceptoSeleccionado}" update=":formEditarMetaConcepto"/>
+	     <p:remoteCommand name="actualizarPosicionMConcepto"  oncomplete=" $('.draggable').draggable({revert:true});" actionListener="#{mConceptoBean.rcActualizarPosicionMConcepto()}"/>
+	     <p:remoteCommand name="borrarMConceptoCommand"  oncomplete=" $('.draggable').draggable({revert:true});" actionListener="#{mConceptoBean.rcRemoveMConcepto()}"/>
+	     <p:remoteCommand name="setMReferenciaSeleccionadaCommand" oncomplete=" $('.draggable').draggable({revert:true});" actionListener="#{mReferenciaBean.rcSetMReferenciaSeleccionada()}" />
+	     <p:remoteCommand name="rcCreateMConcepto" actionListener="#{mConceptoBean.rcCreateMConcepto()}"/>
+	     <p:remoteCommand name="preNuevaMReferencia" actionListener="#{mReferenciaBean.rcPreCreateMReferencia()}"/>  
+	     <p:remoteCommand  name="rcSendFacesMessage" actionListener="#{utilBean.sendFacesMessage}" />
+	</h:form>
+	<h:form>
+	<p:commandButton value="fake" style="display:none;" widgetVar="widgetVarfakeButton"   update=":mainpanel"/>
+	
+	</h:form>
+	<p:outputPanel autoUpdate="true">
+	<h:form id="formMessages"> 
+     <p:messages   closable="true" showDetail="true" showSummary="true"  />  
+  </h:form>
+  </p:outputPanel>
+<p:outputPanel autoUpdate="true" styleClass="#{!mModeloBean.hayMModelos? 'mostrar' : 'ocultar'}" id="mensajeInicial">  
+  <div class="mensajeInicial">
+  
+  	<h1>Actualmente no se ha creado ningún dominio</h1>
+  	<h3>Empiece creando uno en dominios -> Crear... </h3>
+  
+  </div>
+</p:outputPanel>  
+<p:outputPanel  styleClass="#{mModeloBean.hayMModelos? 'mostrar' : 'ocultar'}" id="containerPanel"> 
+	<div id="container">
+	
+	    <div id="tableMetamodelosContainer">
+    <h:form id="formSelectMModelos">
+			
+				
+				
+				
+
+    <p:dataTable  
+    id="metamodeloTable" 
+    var="metamodelo"
+    value="#{catalogoBean.mModelos}"
+    widgetVar="widgetVarMetaModeloTable"
+    scrollable="false"
+    paginator="true"
+    rows="10"
+    
+    paginatorPosition="bottom"
+    emptyMessage="No existe ningún video que cumpla con los criterios de búsqueda"
+    filteredValue="#{mModeloBean.metamodelosFiltrados}"
+    rowKey="#{metamodelo.id}"
+    selection="#{mModeloBean.mModeloSeleccionado}"
+    selectionMode="single"
+    
+    >
+       
+<p:ajax event="rowSelect"  update=":mainpanel,:formCrearMetaConcepto,:formEditarMetaConcepto" oncomplete="setTimeout(function(){cargarListener},3000); PF('widgetVarfakeButton').jq.click(); mostrarOcultar('#tableMetamodelosContainer');"    />
+         <f:facet name="header"  >
+            <p:outputPanel style="width:100px;">
+                <h:outputText value="Buscar:" />
+                <p:inputText id="globalFilter" onkeyup="PF('widgetVarMetaModeloTable').filter()"  />
+            </p:outputPanel>
+        </f:facet>
+  		
+  		<p:column  id="columnaId"  headerText="Id"   sortBy="#{metamodelo.id}" width="30"   >
+            <h:outputText value="#{metamodelo.id}" />
+        </p:column>
+  		<p:column  id="columnaNombre" filterBy="#{metamodelo.nombre}" headerText="Nombre"  filterMatchMode="contains" sortBy="#{metamodelo.nombre}" styleClass="ocultarInput" >
+            <h:outputText value="#{metamodelo.nombre}" />
+        </p:column>
+ 		<p:column  id="columnaFechaCreacion"  headerText="Fecha de creación"  filterMatchMode="contains" sortBy="#{utilBean.fechaStr(metamodelo.fechaCreacion,false)}" width="130" >
+            <h:outputText value="#{utilBean.fechaStr(metamodelo.fechaCreacion,false)}" />
+        </p:column>
+        
+
+    
+    </p:dataTable>
+	</h:form>
+
+		</div>
+		<p:outputPanel autoUpdate="true">
+		<div id="pestanaOcultarVerticalBarra" class="#{mModeloBean.hayMModelos? 'mostrar' : 'ocultar'}"></div>
+<div id="pestanaOcultarVertical" class="#{mModeloBean.hayMModelos? 'mostrar' : 'ocultar'}" onclick="mostrarOcultar('#tableMetamodelosContainer')"><hr/><hr/></div>			
+	</p:outputPanel>
+	
+	
+	
+		<p:outputPanel   autoUpdate="true" id="mainpanel" >
+		<p:outputPanel id="mainpanelInner" rendered="#{mModeloBean.metaModeloSeleccionado}">
+		<div class="metamodeloNombre">
+<h:form id="metamodeloNombreForm">
+<h:outputLabel value="Dominio: " for="nombreDominio"/>
+	<p:inplace id="nombreDominio"   editor="true">  
+	<p:ajax event="save" update=":formSelectMModelos" />
+
+    <p:inputText size="20" value="#{mModeloBean.mModeloSeleccionado.nombre}" required="true" label="nombre del dominio" >
+    <p:ajax update="@form,:formMessages"  />
+    		 		<f:validator validatorId="mModeloValidator" />
+        			
+        			<f:attribute name="modo" value="editar" />    
+    		 	
+	    		
+    </p:inputText>  
+ 
+    </p:inplace>
+
+    </h:form>
+     
+    </div> 
+
+		<div id="sidebar">
+				
+<div style="position:relative;"  class="metaconcepto-sidebar" onclick="rcCreateMConcepto();"> 
+	<h3>Crear concepto</h3>
+	
+</div>
+
+			
+		
+	   </div>
+			<div id="main">
+				<ui:repeat var="mconcepto" value="#{mModeloBean.MMSMConceptos}">
+					<div data-draggable="box" style="position:relative; top:#{mconcepto.posicion.y}px; left:#{mconcepto.posicion.x}px;" class="w" id="node#{mconcepto.idTemporal}" data-idtmp="#{mconcepto.idTemporal}" >
+						<h3 data-draggable="title" data-idtmp="#{mconcepto.idTemporal}" > #{mconcepto.nombre} </h3>
+						<div  data-idtmp="#{mconcepto.idTemporal}" class="deleteElement #{mModeloBean.conceptoDisableClass(mconcepto)}" ></div>
+						<div  data-idtmp="#{mconcepto.idTemporal}" class="editElement" ></div>
+						<p:graphicImage id="info" value="images/info32x32.png" width="32px" height="32px" styleClass="infoElement"/>
+					    <div class="ep"></div>
+					</div>
+					
+					 <p:overlayPanel id="overlay" at="left bottom"  for="info" showEffect="blind" hideEffect="blind" showEvent="mouseover" hideEvent="mouseout"  
+                dismissable="false" showCloseIcon="true" style="width:400px; z-index:100;">
+                 
+                  <h:dataTable id="infoConcepto" value="#{mconcepto.mPropiedades}" var="propiedad" columnClasses="labelInfoColumn,infoColumn">
+				    	<h:column >
+		             		<h:outputLabel value="#{propiedad.nombre}:" /> 
+		        		</h:column> 
+				        <h:column >
+							<h:outputText value="#{propiedad.tipo.etiqueta}" styleClass="propiedadesStringWidget"/>
+								
+					 	</h:column>
+				    </h:dataTable>
+				    
+                
+                 
+               
+                </p:overlayPanel>
+		 		</ui:repeat>
+				<h:outputScript>
+		    		jsPlumb.reset();
+		    		initialize();
+		    		corregirCajasFuera();
+		    	<ui:repeat var="mreferencia" value="#{mModeloBean.MMSMReferencias}">
+			 		cargando=true;
+			      	con=  jsPlumb.connect({source:"node#{mreferencia.referenciante.idTemporal}", target:"node#{mreferencia.referenciado.idTemporal}", label:"#{mreferencia.etiqueta}"});
+			      	con.mid=#{mreferencia.idTemporal};
+			      	console.log("Nueva mreferencia: src:" + #{mreferencia.referenciante.idTemporal} + " dst:" + #{mreferencia.referenciado.idTemporal} );
+			      	
+			    </ui:repeat>
+					bindJsPlumb();
+				</h:outputScript>
+			</div>
+			</p:outputPanel>
+		</p:outputPanel>
+	</div>			
+</p:outputPanel>
+	<p:confirmDialog header="Eliminar dominio" message="Está seguro que desea eliminar el dominio? Se eliminarán también todas las anotaciones asociadas a este dominio." widgetVar="comfirmEliminarMetamodelo"  showEffect="fade" styleClass="dialogoMediano" width="450">  
+		<h:form >
+			<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+	 			<p:commandButton value="Aceptar"     update=":mainpanel,:formSelectMModelos:metamodeloTable" actionListener="#{mModeloBean.removeMModeloSeleccionado()}" icon="ui-icon-check" styleClass="ui-confirmdialog-yes" />
+				<p:commandButton value="Cancelar" onclick="PF('comfirmEliminarMetamodelo').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />       
+	    	</h:panelGrid>
+	    </h:form>
+	</p:confirmDialog>  
+	    
+	<p:confirmDialog header="Descartar cambios" message="Está seguro que desea descartar los cambios?" widgetVar="comfirmDescartarCambios"  showEffect="fade" styleClass="dialogoMediano" width="450">  
+		<h:form >
+			<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+	 		
+				<p:commandButton value="Aceptar"  onclick="PF('comfirmDescartarCambios').hide()"   update=":mainpanel,:formSelectMModelos" actionListener="#{mModeloBean.refreshCatalogo()}" icon="ui-icon-check" styleClass="ui-confirmdialog-yes" />
+				<p:commandButton value="Cancelar" onclick="PF('comfirmDescartarCambios').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />       
+		  </h:panelGrid>
+	    </h:form>
+	</p:confirmDialog>  
+	    
+	<p:confirmDialog header="Guardar cambios" message="Está seguro que desea guardar los cambios?" widgetVar="comfirmGuardarCambios"  showEffect="fade" styleClass="dialogoMediano" width="450">  
+	 	<h:form>
+			<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+	 			<p:commandButton onclick="PF('comfirmGuardarCambios').hide()"  value="Aceptar"  actionListener="#{mModeloBean.saveMModelo()}"  icon="ui-icon-check" styleClass="ui-confirmdialog-yes" update=":mainpanel,:formSelectMModelos" />
+				<p:commandButton value="Cancelar" onclick="PF('comfirmGuardarCambios').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />       
+		   </h:panelGrid>
+	    </h:form>
+	</p:confirmDialog>  
+	     
+
+	
+	
+	
+	
+		<!-- 
+		
+			<p:dialog header="Editar Meta-Modelo" appendToBody="true" style="position:fixed; top: calc(50% - 71px); left:calc(50% - 167px);" modal="true" draggable="false" position="center" width="334" minHeight="300"  widgetVar="widgetSelectModelos">
+		<h:form id="formSelectMModelos">
+			
+				<p:selectOneMenu rendered="#{mModeloBean.hayMModelos}" valueChangeListener="#{mModeloBean.refreshCatalogo()}" id="selectMModelos" value="#{mModeloBean.mModeloSeleccionado}" effect="fade" converter="MModeloConverter" onchange="cargando=true;" widgetVar="widgetselectMModelo"  update=":mainpanel,:formSelectMModelos" >
+					<f:selectItems value="#{catalogoBean.mModelos}" var="mmodelo" itemLabel="#{mmodelo.nombre}" itemValue="#{mmodelo}" />
+						
+				</p:selectOneMenu>
+				<h:panelGrid columns="2" style="width:100%; text-align: center;">
+		   
+		
+		    	<p:commandButton value="Aceptar" onclick="PF('widgetEditarModelo').hide(); setTimeout(function(){cargarListener},3000);" actionListener="#{mModeloBean.fake()}" update=":mainpanel,:formSelectMModelos" />
+		    	<p:commandButton value="Cerrar" onclick="PF('widgetEditarModelo').hide();" update=":mainpanel,:formSelectMModelos" />
+			</h:panelGrid>	
+			
+		</h:form>
+	</p:dialog>	
+		 -->			
+	
+	<p:dialog header="Nuevo dominio" id="dialogoNuevoMetaModelo" resizable="false" appendToBody="true"  modal="true" draggable="false"  width="450" minHeight="300" widgetVar="widgetNuevoMetaModelo" styleClass="dialogoMediano">
+		<h:form id="formNuevoMetaModelo">
+		<p:message id="messageNuevoMetamodelo" closable="true" autoUpdate="true" for="nombre" showDetail="true" showSummary="true"  />
+	    	<h:panelGrid columns="2" styleClass="panelgridDialogos" columnClasses="labelColumn,inputColumn">
+	    		<p:outputLabel value="nombre" for="nombre"/>
+	    		<p:inputText  id="nombre" value="#{mModeloBean.nuevoMetaModelo}" styleClass="inputDialogos" required="true">
+	    		<p:ajax update="@form" />
+    		 		<f:validator validatorId="mModeloValidator" />
+        			
+        			<f:attribute name="modo" value="crear" />    
+    		 	
+	    		
+	    		</p:inputText>
+	    	</h:panelGrid>
+	    	<p:separator/>
+	    	<h:panelGrid columns="1" styleClass="panelgridDialogosBotones">
+	    <p:commandButton value="Guardar" actionListener="#{mModeloBean.createMModelo()}"   update=":mainpanel,:formSelectMModelos,:mainpanelInner,messageNuevoMetamodelo,:mensajeInicial,:containerPanel" />
+	    </h:panelGrid>
+		</h:form>
+	</p:dialog>   
+	
+	
+	<p:dialog header="Editar dominio" id="dialogoEditarMetaModelo" resizable="false" appendToBody="true"  modal="true" draggable="true"  width="450" minHeight="300" widgetVar="widgetEditarMetaModelo" styleClass="dialogoMediano">
+		<p:outputPanel autoUpdate="true">
+		<h:form id="formEditarMetaModelo">
+		<p:message id="messageEditarMetamodelo" closable="true" autoUpdate="true" for="nombre" showDetail="true" showSummary="true"  />
+	    	<h:panelGrid columns="2" styleClass="panelgridDialogos" columnClasses="labelColumn,inputColumn">
+	    		<p:outputLabel value="Nombre" for="nombre"/>
+	    		<p:inputText  id="nombre" value="#{mModeloBean.mModeloSeleccionado.nombre}" styleClass="inputDialogos" required="true">
+	    		<p:ajax update="@form" />
+    		 		<f:validator validatorId="mModeloValidator" />
+        			
+        			<f:attribute name="modo" value="editar" />    
+    		 	
+	    		
+	    		</p:inputText>
+	    		<p:outputLabel value="Descripción" for="descripcion"/>
+	    		
+	    			<p:inputTextarea  id="descripcion" value="#{mModeloBean.mModeloSeleccionado.descripcion}" styleClass="inputDialogos" required="false">
+	    		<p:ajax update="@form" />
+    		 		
+	    		
+	    		</p:inputTextarea>
+	    	</h:panelGrid>
+	    	<p:separator/>
+	    	<h:panelGrid columns="1" styleClass="panelgridDialogosBotones">
+	    <p:commandButton value="Cerrar"    update=":mainpanel,:formSelectMModelos,:mainpanelInner,messageEditarMetamodelo,:mensajeInicial,:containerPanel" onclick="PF('widgetEditarMetaModelo').hide();"/>
+	    </h:panelGrid>
+		</h:form>
+		</p:outputPanel>
+	</p:dialog>		
+	    		
+	<p:dialog header="Editar concepto" widgetVar="widgetEditarMetaConcepto"  closeOnEscape="true"  id="dialogoEditarMetaConcepto" draggable="true" appendToBody="true"  modal="true" styleClass="dialogoGrande" width="600">
+		<h:form id="formEditarMetaConcepto" >
+<p:message closable="true" autoUpdate="true" for="nombre" showDetail="true" showSummary="true"  />
+		
+		
+			<h:panelGrid columns="2" columnClasses="labelColumn,inputColumn" styleClass="panelgridDialogos">
+	    		<p:outputLabel value="Nombre" for="nombre"/>
+	    		<p:inputText  id="nombre"  value="#{mConceptoBean.mconceptoSeleccionado.nombre}" style="width:98%;">
+	    			<p:ajax update=":formEditarMetaConcepto" />
+	    			<f:validator validatorId="mConceptoValidator" />
+        						<f:attribute name="mconcepto" value="#{mConceptoBean.mconceptoSeleccionado}" />
+        						 <f:attribute name="modo" value="editar" /> 
+			            	
+	    		</p:inputText>
+	    		
+	    		
+	    	</h:panelGrid>
+	    	
+	    		<p:outputPanel autoUpdate="true" rendered="#{!mConceptoBean.mconceptoSeleccionado.mPropiedades.isEmpty()}">
+	    		<p:panel header="Propiedades" id="propiedades" styleClass="panelPropiedades" >
+		    	    <h:dataTable id="inputsMpropiedad" value="#{mConceptoBean.mconceptoSeleccionado.mPropiedades}" var="propiedad" columnClasses="inputColumn,inputColumn">
+		    			
+		        		<h:column>
+		        		<f:facet name="header">Nombre</f:facet>
+			            	<p:inputText id="inputNombre"  value="#{propiedad.nombre}" style="width:92%;"  >
+			                	<p:ajax update=":formEditarMetaConcepto" />  
+			                	<f:validator validatorId="mPropiedadValidator" />
+        						<f:attribute name="mpropiedad" value="#{propiedad}" />
+        						<f:attribute name="mpropiedades" value="#{mConceptoBean.mconceptoSeleccionado.mPropiedades}" />  
+			            	</p:inputText>
+			            	
+			            	
+			        	</h:column>
+			        
+		        		
+		        		
+		        		<h:column  > 
+		        		<f:facet name="header">Tipo</f:facet>
+		        		<h:panelGrid rendered="#{mConceptoBean.renderedEditarPropiedad(propiedad)}" columns="2">
+		        			<p:selectOneMenu id="inputTipo" value="#{propiedad.tipo}" > 
+		        				<f:selectItems value="#{mConceptoBean.tipos}"  var="tipo" itemLabel="#{tipo.etiqueta}" itemValue="#{tipo}"/> 
+		              				<p:ajax update=":formEditarMetaConcepto" />    
+		        			</p:selectOneMenu> 
+		        			<p:commandButton actionListener="#{mConceptoBean.removeMPropiedadDeMConceptoSeleccionado(propiedad)}" update=":formEditarMetaConcepto" value="X" />
+		        			</h:panelGrid>
+		        			<h:outputText value="#{propiedad.tipo.etiqueta}" id="inputTipo2" rendered="#{!mConceptoBean.renderedEditarPropiedad(propiedad)}" />
+		        		</h:column >
+		        	
+		        	
+		    		</h:dataTable>
+		    		</p:panel>
+		    	
+		    	</p:outputPanel>
+		    	   <p:separator />
+	    	<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+	    			
+		    		    
+		    	
+	    		<p:commandButton value="Añadir propiedad" action="#{mConceptoBean.addPropiedadMConceptoSeleccionado}" update="inputsMpropiedad , :formEditarMetaConcepto" />
+	    		<p:commandButton value="Cerrar" onclick="PF('widgetEditarMetaConcepto').hide();" update="inputsMpropiedad , :formEditarMetaConcepto" />
+	    	</h:panelGrid>	
+	   </h:form>
+	</p:dialog>
+	   
+	<p:dialog header="Crear concepto" widgetVar="widgetCrearMetaConcepto"  closable="false" id="dialogoCrearMetaConcepto"  appendToBody="true"  modal="true"  position="center"  minHeight="300" styleClass="dialogoGrande" width="600">
+		<h:form id="formCrearMetaConcepto">
+		<p:message closable="true" autoUpdate="true" for="nombre" showDetail="true" showSummary="true"  />
+		
+	
+	    	<h:panelGrid columns="2" columnClasses="labelColumn,inputColumn" styleClass="panelgridDialogos">
+	    		<p:outputLabel value="nombre" for="nombre"/>
+	    		<p:inputText  id="nombre" value="#{mConceptoBean.nombreMConcepto}" style="width:98%;">
+	    			<p:ajax update=":formCrearMetaConcepto" />
+	    			<f:validator validatorId="mConceptoValidator" />
+        						<f:attribute name="mmodelo" value="#{mModeloBean.mModeloSeleccionado}" />
+        					
+        						<f:attribute name="modo" value="crear" />
+	    		</p:inputText>
+	    	</h:panelGrid>
+	    		<p:panel header="Propiedades" styleClass="panelPropiedades" rendered="#{!mConceptoBean.mpropiedades.isEmpty()}" >
+	    		<h:dataTable id="inputsMpropiedad" value="#{mConceptoBean.mpropiedades}" var="propiedad" columnClasses="inputColumn,inputColumn">
+			    	
+			        <h:column>
+			        <f:facet name="header">Nombre</f:facet>
+			            <p:inputText id="inputNombre"  value="#{propiedad.nombre}" style="width:92%;" >
+			            	<p:ajax update=":formCrearMetaConcepto" /> 
+			            	<f:validator validatorId="mPropiedadValidator" />
+        						<f:attribute name="mpropiedad" value="#{propiedad}" />
+        						<f:attribute name="mpropiedades" value="#{mConceptoBean.mpropiedades}" />
+        						  
+			            	   
+			            </p:inputText>
+			        </h:column>
+			     
+			        <h:column>
+			        <f:facet name="header">Tipo</f:facet>
+				        <p:selectOneMenu id="inputTipo" value="#{propiedad.tipo}"> 
+				        <f:selectItems value="#{mConceptoBean.tipos}"  var="tipo" itemLabel="#{tipo.etiqueta}" itemValue="#{tipo}"/> 
+				              <p:ajax update=":formCrearMetaConcepto" />    
+				        </p:selectOneMenu> 
+				    </h:column>
+			        <h:column>
+			        	<p:commandButton actionListener="#{mConceptoBean.removeMPropiedadDeNuevoMConcepto(propiedad)}" update=":formCrearMetaConcepto" value="X" />
+			        </h:column>
+				</h:dataTable>
+	    		</p:panel>
+	    		<h:panelGrid columns="3" styleClass="panelgridDialogosBotones">
+	    			<p:commandButton value="Añadir propiedad" action="#{mConceptoBean.addPropiedadesNuevoMConcepto}" update="inputsMpropiedad , :formCrearMetaConcepto" />
+	    			<p:commandButton value="Crear concepto"  update="inputsMpropiedad , :formCrearMetaConcepto" action="#{mConceptoBean.createMConcepto}"/>
+	    			<p:commandButton value="Cerrar" onclick="PF('widgetCrearMetaConcepto').hide();" update="inputsMpropiedad , :formCrearMetaConcepto"  action="#{mConceptoBean.reset}" />
+	    		</h:panelGrid>	
+	   </h:form>
+	</p:dialog>
+	
+	<p:dialog header="Crear referencia" visible="false"  id="dialogoNuevaMReferencia" appendToBody="true" modal="true" closable="false" draggable="false" position="center" width="450" minHeight="108" widgetVar="widgetNuevaMReferencia" styleClass="dialogoMediano" >
+		<h:form id="formnuevaMreferencia">
+		<p:message closable="true" autoUpdate="true" for="etiquetaMReferencia" showDetail="true" showSummary="true"  />
+	    	<h:panelGrid columns="2" styleClass="panelgridDialogos" columnClasses="labelColumn,inputColumn">
+	    		<p:outputLabel value="Etiqueta" for="etiquetaMReferencia"/>
+	    		<p:inputText  id="etiquetaMReferencia"  widgetVar="nuevaEtiquetaMReferenciaWidget" value="#{mReferenciaBean.nuevaReferenciaEtiqueta}" styleClass="inputDialogos">
+	    			<p:ajax update="@form" />
+	    			<f:validator validatorId="mReferenciaValidator" />
+        						<f:attribute name="mreferencias" value="#{mModeloBean.mModeloSeleccionado.mReferencias}" />
+        						<f:attribute name="referenciante" value="#{mReferenciaBean.sourceSeleccionado}" />
+        						<f:attribute name="referenciado" value="#{mReferenciaBean.targetSeleccionado}" />
+        					
+        						<f:attribute name="modo" value="crear" />
+	    		</p:inputText>
+	    	</h:panelGrid> 
+<p:separator />
+	    	<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+	    		<p:commandButton  value="Aceptar"  action="#{mReferenciaBean.createMReferencia}"  />
+	    		<p:commandButton  value="Cancelar" onclick="jsPlumb.detach(referenciaActual); PF('widgetNuevaMReferencia').hide();" type="button" />     
+	    	</h:panelGrid>
+	    </h:form>
+	</p:dialog> 
+
+    <p:dialog header="Editar referencia" visible="false" appendToBody="true" modal="true"  closable="false" draggable="false"  width="450" minHeight="108" onHide="#{mReferenciaBean.deseleccionarMReferenciaSeleccionada()}" widgetVar="widgetEditarMReferencia" styleClass="dialogoMediano">
+    	<h:form id="formEditarReferencia">
+    	<p:message closable="true" autoUpdate="true" for="etiquetaMReferencia" showDetail="true" showSummary="true"  />
+    	<p:outputPanel autoUpdate="true">
+    		<h:panelGrid columns="2" style="margin-bottom:10px;" columnClasses="labelColumn,inputColumn">
+    			<p:outputLabel value="Etiqueta" for="etiquetaMReferencia"/>
+    			<p:inputText  id="etiquetaMReferencia"  value="#{mReferenciaBean.mReferenciaSeleccionada.etiqueta}" styleClass="inputDialogos" required="true">
+    		 		<p:ajax update="@form" />
+    		 		<f:validator validatorId="mReferenciaValidator" />
+        			<f:attribute name="mreferencias" value="#{mModeloBean.mModeloSeleccionado.mReferencias}" />
+        			<f:attribute name="mreferencia" value="#{mReferenciaBean.mReferenciaSeleccionada}" />
+        			
+        			<f:attribute name="modo" value="editar" />    
+    		 		
+    			</p:inputText>
+   			</h:panelGrid> 
+   		</p:outputPanel>
+   		   <p:separator />
+  		   	<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+    		 	<p:commandButton  value="Borrar" actionListener="#{mReferenciaBean.removeMReferenciaSeleccionada()}" update=":formEditarReferencia" oncomplete="PF('widgetEditarMReferencia').hide()" title="Para eliminar esta referencia debe eliminar todas las notaciones asociadas a este dominio."/>
+    		 	
+    		 	<p:commandButton  value="Cerrar" actionListener="#{mReferenciaBean.deseleccionarMReferenciaSeleccionada()}" update=":formEditarReferencia" />
+    		</h:panelGrid>
+    	</h:form>	
+    		  
+	</p:dialog>
+</f:view>
+</ui:define>
+</ui:composition>
+</h:body>
+</html>

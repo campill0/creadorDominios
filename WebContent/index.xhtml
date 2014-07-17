@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+<h:head>
+<link type="text/css" rel="stylesheet" href="resources/css/estilos.css"/>
+ <script src="resources/js/vendor/jsplumb/lib/jquery-1.8.1-min.js"></script>
+		
+</h:head>
+<h:body styleClass="body-noise">
+
+	
+		<h1 class="tituloPaginaPrincipal paginaPrincipal">Anotador semántico de vídeos</h1>
+		<div id="enlacesPaginaPrincipal" class="paginaPrincipal" >
+    <div class="enlacePaginaPrincipal " onclick="$(location).attr('href','dominios.faces');" >
+    
+     <div class="enlacePaginaPrincipalContent">
+    	<h1>Dominios</h1>
+  	<h3>Utilice el editor de dominios para crear un dominio. </h3>
+  	</div>
+     </div>
+     
+    <div class="enlacePaginaPrincipal " onclick="$(location).attr('href','anotaciones.faces');" >
+    
+     <div class="enlacePaginaPrincipalContent">
+    	<h1>Anotaciones</h1>
+  	<h3>Describa escenas de vídeo usando el editor de anotaciones.</h3>
+  	</div>
+     </div>
+     
+      <div class="enlacePaginaPrincipal" onclick="$(location).attr('href','videos.faces');" >
+    
+     <div class="enlacePaginaPrincipalContent">
+    	<h1>Vídeos</h1>
+  	<h3>Gestione los vídeos de la aplicación.</h3>
+  	</div>
+     </div>
+     
+  
+     
+</div>
+</h:body>
+</html>

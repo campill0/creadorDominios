@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:body>
+<ui:composition template="/template/templates/templateLayout.xhtml">
+<ui:define name="scripts">
+
+</ui:define>
+<ui:define name="content">
+<f:view>
+
+
+
+ 
+	<h:form id="menuForm">  
+		<p:outputPanel autoUpdate="true">
+			<p:menubar>  
+			       
+				<p:menuitem  value="Dominios" url="dominios.faces" />
+				<p:menuitem  value="Anotaciones" url="anotaciones.faces" />
+				
+			     	<p:submenu  label="Vídeos" styleClass="currentPage">  
+			       <p:menuitem    value="Nuevo vídeo"  url="#"  onclick="PF('widgetNuevoVideo').show()"></p:menuitem>
+			       
+			    </p:submenu>     
+				  
+			        
+			</p:menubar>  
+		</p:outputPanel>	
+	</h:form>
+	
+  <h:form> 
+  <p:remoteCommand name="setDuracionVideo" update=":formHiddenData,:formDataTableVideos"   actionListener="#{videoBean.rcSetDuracionVideo()}" />
+  <p:remoteCommand  name="rcSendFacesMessage" actionListener="#{utilBean.sendFacesMessage}" update=":messagesForm"/>
+   </h:form>
+     <h:form id="formHiddenData">
+    
+    <h:inputHidden  id="urlHidden"  value="#{videoBean.videoSeleccionado.url}" />
+      <p:commandButton style="display:none;" update="@form" value="fake()"  widgetVar="widgetFakeHiddenButton"/>
+     </h:form>
+       <h:form id="messagesForm">
+     <p:messages id="messages"   closable="true"  />  
+  
+   </h:form>
+  <p:outputPanel id="mensajeInicial" styleClass="#{!videoBean.hayVideos? 'mostrar' : 'ocultar'}" autoUpdate="true" >
+  <div class="mensajeInicial"  >
+  
+  	<h1>Actualmente no se ha añadido ningún vídeo</h1>
+  	<h3>Empiece creando uno en dominios -> Crear... </h3>
+  
+  </div>
+  </p:outputPanel>
+  
+ 
+     <div style="display:none;" id="videoHidden"></div>
+
+<div id="container">
+
+
+ 
+     
+
+
+
+
+
+
+<div id="tableVideosVideosFaces">
+<h:form id="formDataTableVideos">
+
+    <p:dataTable  id="videoTable" rendered="#{videoBean.hayVideos}" var="video"  value="#{videoBean.videos}" widgetVar="widgetVarVideoTable" scrollable="false"  paginator="true" rows="10" paginatorPosition="bottom" emptyMessage="No existe ningún video que cumpla con los criterios de búsqueda" filteredValue="#{videoBean.videosFiltrados}" rowStyleClass="#{videoBean.rowStyle(video)}" rowKey="#{video.id}"  selection="#{videoBean.videoSeleccionado}" selectionMode="single" styleClass="filas-con-iconos" >
+       
+<p:ajax event="rowSelect" update=":formEditarVideoActual,@form,:formHiddenData" oncomplete="loadVideoSimple(getUrlHidden()); PF('widgetEditarVideo').show();"   />
+         <f:facet name="header">
+            <p:outputPanel>
+                <h:outputText value="Buscar en todos los campos:" />
+                <p:inputText id="globalFilter" onkeyup="PF('widgetVarVideoTable').filter()" style="width:150px" />
+            </p:outputPanel>
+        </f:facet>
+  		
+  		
+  		<p:column  id="columnaTipo"  width="32" styleClass="url-icon-#{video.tipoUrl}" >
+           
+        </p:column>
+        <p:column  id="columnaTitulo" filterBy="#{video.titulo}" headerText="Título"  filterMatchMode="contains" sortBy="#{video.titulo}" >
+            <h:outputText value="#{video.titulo}" />
+        </p:column>
+ 		<p:column id="columnaUrl" filterBy="#{video.url}"  headerText="Url"  filterMatchMode="contains">
+            <h:outputText value="#{video.url}" />
+        </p:column>
+		<p:column id="columnaDuracion"     headerText="Duración" width="125" sortBy="#{video.duracion}" styleClass="columnaTiempo">
+            <h:outputText value="#{videoBean.secondToHMS(video.duracion)}" />
+        </p:column>
+        
+        <p:column id="columnaFechaCreacion"    headerText="Creado" width="125" sortBy="#{video.fechaCreacion}" styleClass="columnaTiempo">
+            <h:outputText value="#{utilBean.fechaStr(video.fechaCreacion,false)}" />
+        </p:column>
+
+    
+    </p:dataTable>
+    
+</h:form>
+          
+</div>
+		
+				</div>
+  
+		<p:dialog  header="Nuevo vídeo" visible="false"  appendToBody="true" modal="true"  closable="false" draggable="false" position="center"  widgetVar="widgetNuevoVideo" styleClass="dialogoMediano" width="450">
+    	<p:messages id="messagesErrorNuevoVideo" closable="true"   showDetail="true" showSummary="true"  />
+		
+    	<h:form id="formNuevoVideo">
+    	
+    	 <h:panelGrid columns="2" styleClass="panelgridDialogos" columnClasses="labelColumn,inputColumn">
+    	 <p:outputLabel value="Título:" for="input-nombre-nuevo-video"/> 
+    	 <p:inputText value="#{videoBean.nuevoVideoTitulo}" id="input-nombre-nuevo-video"  styleClass="inputDialogos"  >
+    	 <f:validator validatorId="videoValidator"  />
+			<f:attribute name="campo" value="TITULO" /> 
+    	 </p:inputText>
+    	 <p:outputLabel value="Url:" for="input-url-nuevo-video"/> 
+    	 <p:inputText value="#{videoBean.nuevoVideoUrl}"  id="input-url-nuevo-video" onchange="setDuracionVideoHidden($('#formNuevoVideo\\:input-url-nuevo-video')[0].value,$('#formNuevoVideo\\:durationHidden')[0])"  styleClass="inputDialogos">
+    	  <f:validator validatorId="videoValidator"  />
+			<f:attribute name="campo" value="URL" /> 
+    	
+    	 </p:inputText>
+    	 
+    	 
+  		 
+  		 </h:panelGrid>
+  		 <h:inputHidden  id="durationHidden"  value="#{videoBean.nuevoVideoDuracion}"  >
+  		 <f:validator validatorId="videoValidator"  />
+	<f:attribute name="campo" value="DURATION" /> 
+   
+  		 </h:inputHidden>
+  	<p:separator />
+  	
+  		   	<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+    		 	<p:commandButton  value="Aceptar" actionListener="#{videoBean.createVideo()}"   update="@form,:formEditarVideoActual,:formDataTableVideos,:formHiddenData,:messagesErrorNuevoVideo,:mensajeInicial" />
+    		 	<p:commandButton  value="Cancelar" oncomplete="PF('widgetNuevoVideo').hide()"/>
+    		</h:panelGrid>
+    	</h:form>	
+    		  
+	</p:dialog>
+	<p:dialog header="Editar vídeo" visible="false" widgetVar="widgetEditarVideo" styleClass="dialogoGrande" width="600">
+	
+	 <h:form id="formEditarVideoActual" >
+  
+<p:messages id="messagesErrorEditarVideo" closable="true"  showSummary="true"  />
+
+  <p:outputPanel autoUpdate="true" >
+
+  <h:panelGrid columns="2" columnClasses="labelColumn,inputColumn" styleClass="panelgridDialogos">
+  
+  <p:outputLabel value="Título:" for="input-nombre-editar-video"/> 
+  <p:inputText value="#{videoBean.videoSeleccionado.titulo}" id="input-nombre-editar-video" styleClass="inputDialogos"  >
+    <f:validator validatorId="videoValidator"  />
+	<f:attribute name="campo" value="TITULO" /> 
+    	
+  </p:inputText>
+  <p:outputLabel value="Url:" for="input-url-editar-video"/> 
+  <p:inputText  value="#{videoBean.videoSeleccionado.url}" id="input-url-editar-video" styleClass="inputDialogos" onchange="setDuracionVideoHidden($('input#formEditarVideoActual\\:input-url-editar-video')[0].value,$('input#formEditarVideoActual\\:durationHidden')[0])" >
+  <f:validator validatorId="videoValidator"  />
+	<f:attribute name="campo" value="URL" /> 
+    
+  </p:inputText>
+  
+  
+  
+ 
+     		
+  
+  </h:panelGrid>
+   <h:inputHidden  id="durationHidden"  value="#{videoBean.videoSeleccionado.duracion}"  >
+   <f:validator validatorId="videoValidator"  />
+	<f:attribute name="campo" value="DURATION" /> 
+   </h:inputHidden>
+  
+   </p:outputPanel> 
+  <div id="videoPlayer" class="seccionVideo"> </div>
+  <p:separator />
+  
+  <h:panelGrid columns="3" styleClass="panelgridDialogosBotones">
+  
+  <p:commandButton  value="Guardar" actionListener="#{videoBean.saveVideo()}"  update="@form,:formDataTableVideos,messagesErrorEditarVideo" />
+  <p:commandButton  value="Eliminar"  onclick="PF('comfirmEliminarVideo').show()" update="@form,:formDataTableVideos,:mensajeInicial"  />
+  
+  <p:commandButton  value="Cancelar"  onclick="PF('widgetEditarVideo').hide()" update="@form,:formDataTableVideos,messagesErrorEditarVideo" />
+  </h:panelGrid>
+
+
+
+</h:form>
+
+
+	</p:dialog>
+	
+		 
+<p:dialog modal="true" widgetVar="statusNuevoVideoDialog" header="Recopilando información..."   
+        resizable="false" draggable="false" closable="true">  
+        <h:panelGrid columns="1" style="text-align:center;" id="loadingNuevoVideoInfo">
+  
+    <p:graphicImage value="/images/ajax-loader.gif" />
+    <h:outputText  value="Recopilando información sobre el vídeo..."/>
+    
+    </h:panelGrid>
+      
+</p:dialog>  
+
+<p:confirmDialog header="Eliminar video" message="Está seguro que desea eliminar el vídeo? Se eliminarán también todas las anotaciones asociadas a este video." widgetVar="comfirmEliminarVideo"  showEffect="fade" styleClass="dialogoMediano" width="450">  
+		<h:form >
+			<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+	 			<p:commandButton value="Aceptar"  update=":formDataTableVideos,:formHiddenData,:messagesForm,:mensajeInicial" actionListener="#{videoBean.removeVideoSeleccionado()}" icon="ui-icon-check" styleClass="ui-confirmdialog-yes" />
+				<p:commandButton value="Cancelar" onclick="PF('comfirmEliminarVideo').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />       
+	    	</h:panelGrid>
+	    </h:form>
+	</p:confirmDialog>  
+			</f:view>
+		</ui:define>
+	</ui:composition>
+</h:body>
+</html>

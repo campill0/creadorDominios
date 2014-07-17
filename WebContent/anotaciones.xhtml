@@ -1,0 +1,555 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"
+	xmlns:h="http://java.sun.com/jsf/html"
+	xmlns:c="http://java.sun.com/jsp/jstl/core"
+	xmlns:f="http://java.sun.com/jsf/core"
+	xmlns:ui="http://java.sun.com/jsf/facelets"
+	xmlns:p="http://primefaces.org/ui">
+
+<h:body>
+
+<ui:composition template="/template/templates/templateLayout.xhtml">
+<ui:define name="scripts">
+<script src="resources/js/app/app-modelo.js"></script>
+
+
+</ui:define>
+<ui:define name="preBody">
+
+<div id="sliderTime"><span>00:00:00</span> </div>
+
+</ui:define>
+<ui:define name="content">
+<f:view>
+ 
+ 
+	<h:form id="menuForm">  
+		<p:outputPanel autoUpdate="true">
+			<p:menubar>  
+			   	<p:submenu  label="Archivo">  
+				   <p:menuitem  disabled="#{!modeloBean.hayFragmentoSeleccionado}" value="Guardar"  onclick="PF('comfirmGuardarCambios').show()"  ></p:menuitem>
+			       <p:menuitem    disabled="#{!modeloBean.hayFragmentoSeleccionado}" value="Descartar cambios"  url="#"  onclick="PF('comfirmDescartarCambios').show()"></p:menuitem>
+			       
+			    </p:submenu>     
+				<p:menuitem  value="Dominios" url="dominios.faces" />
+				<p:submenu label="Anotaciones" styleClass="currentPage">  
+			  	<p:menuitem value="Crear..."  actionListener="#{modeloBean.resetNuevoModelo()}" onclick="PF('widgetCrearModelo').show();"   url="#"  disabled="#{!modeloBean.renderedNuevoModelo}"></p:menuitem>  
+			    <p:menuitem value="Editar..." onclick="PF('widgetEditarModeloActual').show()"  rendered="#{modeloBean.hayFragmentoSeleccionado}" url="#" ></p:menuitem>  
+			    <p:menuitem value="Eliminar..." update=":mainpanel" rendered="#{modeloBean.hayFragmentoSeleccionado}" ajax="false"   onclick="PF('comfirmEliminarModelo').show()" url="#" ></p:menuitem>
+			        
+			    </p:submenu> 
+			     	
+			    <p:menuitem  value="Videos" url="videos.faces" />   
+				  
+			        
+			</p:menubar>  
+		</p:outputPanel>	
+	</h:form>
+	<h:form>
+		<p:remoteCommand  name="actualizarPosicionConcepto"  oncomplete=" recuperarDraggable();" actionListener="#{conceptoBean.rcActualizarPosicionConcepto()}" update=":messagesForm"/>
+	    <p:remoteCommand name="setConceptoSeleccionado"  oncomplete=" recuperarDraggable();" actionListener="#{conceptoBean.rcSetConceptoSeleccionado}" update=":formEditarConcepto"/>
+	    <p:remoteCommand name="borrarConceptoCommand"  oncomplete=" recuperarDraggable();" actionListener="#{conceptoBean.rcRemoveConcepto()}" update=":messagesForm"/>
+	    <p:remoteCommand name="nuevoConcepto" oncomplete=" recuperarDraggable();guardarPosicionDraggables();" actionListener="#{conceptoBean.rcCreateConcepto()}" update=":messagesForm"/>  
+	    <p:remoteCommand name="preNuevaReferencia" actionListener="#{referenciaBean.rcPreCreateReferencia()}" update=":formHiddenData,:messagesForm" onsuccess="preSeleccionarReferencia()"/>
+	    <p:remoteCommand name="nuevaReferencia" oncomplete=" recuperarDraggable(); PF('widgetNuevaReferencia').hide(); " actionListener="#{referenciaBean.rcCreateReferencia()}"  update=":messagesForm"/>
+	    <p:remoteCommand name="setReferenciaSeleccionadaCommand" oncomplete=" recuperarDraggable();" actionListener="#{referenciaBean.rcSetReferenciaSeleccionada()}" update=":messagesForm" />
+	    <p:remoteCommand name="setDuracionVideo" update=":formVideoSlider,:formHiddenData,:messagesForm"   actionListener="#{modeloBean.rcSetDuracionVideo()}" />
+	    <p:remoteCommand name="alertaReferenciasNoDisponibles"    actionListener="#{referenciaBean.rcAlertaReferenciasNoDisponibles()}" update=":messagesForm"/>
+	    <p:remoteCommand  name="processTable"    update=":videotablesearchform,:messagesForm" />
+		<p:remoteCommand  name="rcSendFacesMessage" actionListener="#{utilBean.sendFacesMessage}" update=":messagesForm"/>	    
+   </h:form>
+   <h:form>
+	<p:commandButton  value="fake" style="display:none;" widgetVar="widgetVarfakeButton"   update=":mainpanel"/>
+	
+	</h:form>
+   <h:form id="messagesForm">
+     <p:messages id="messages"  showDetail="true" showSummary="true" closable="true"  />  
+  
+   </h:form>
+   <h:form id="formHiddenData" >
+  <h:inputHidden  id="startHidden"  value="#{modeloBean.fragmentoSeleccionado.inicio}"  />
+  <h:inputHidden  id="endHidden"  value="#{modeloBean.fragmentoSeleccionado.fin}" />
+     <h:inputHidden  id="durationHidden"  value="#{modeloBean.fragmentoSeleccionado.video.duracion}" />
+     <h:inputHidden  id="referenciasDisponiblesHidden"  value="#{referenciaBean.hayReferenciasDisponibles}" />
+      <p:commandButton style="display:none;" update=":formHiddenData,:formVideoSlider" value="fake()"  widgetVar="widgetFakeHiddenButton"/>
+     </h:form>
+    <p:outputPanel autoUpdate="true" styleClass="#{!mModeloBean.hayMModelos? 'mostrar' : 'ocultar'}" id="mensajeInicial">  
+  <div class="mensajeInicial">
+   
+  	<h1>Actualmente no se ha creado ningún dominio</h1>
+  	<h3>Para crear una anotación es necesario que haya al menos un dominio al que asociarlo.</h3>
+  	<h3>Empiece creando uno yendo a la sección de dominios y seleccionando en el menú dominios la opción Crear... </h3>
+  
+  </div>
+</p:outputPanel> 
+ <p:outputPanel id="mensajeInicial2" styleClass="#{!videoBean.hayVideos? 'mostrar' : 'ocultar'}" autoUpdate="true" >
+  <div class="mensajeInicial">
+  
+  	<h1>Actualmente no se ha añadido ningún vídeo</h1>
+  	<h3>Para crear una anotación es necesario que haya al menos un vídeo al que asociarlo.</h3>
+  	<h3>Empiece creando uno yendo a la sección de dominios y seleccionando en el menú dominios la opción Crear... </h3>
+  
+  </div>
+  </p:outputPanel>
+  <p:outputPanel rendered="#{mModeloBean.hayMModelos and videoBean.hayVideos}" id="containerPanel">
+<div id="container">
+
+
+ 
+<div id="videoContainer">
+
+<div id="videotablesearch">
+<div id="fullScreenVideoTable" onclick="toggleVideoTable();" class="fullScreenIcon fullScreenIconOn"></div>
+<h:form id="videotablesearchform">
+   <p:dataTable id="datatableVideos"   var="video"  value="#{modeloBean.videos}" widgetVar="widgetVarVideoTable" scrollable="true" scrollHeight="150" emptyMessage="No existe ningún video que cumpla con los criterios de búsqueda" filteredValue="#{modeloBean.videosFiltrados}"  rowKey="#{video.id}"  selection="#{modeloBean.videoSeleccionado}" selectionMode="single" styleClass="filas-con-iconos" >
+       
+
+        
+        	<p:ajax event="rowSelect" update="@form,:menuForm,:formNuevoModelo" /> 
+        	
+        	
+        	<p:column  id="columnaTipo"  width="16" styleClass="url-icon-#{video.tipoUrl}" >
+           
+        </p:column>
+        <p:column  id="columnaFragmentos"  width="32" style="text-align:center;font-size:0.9em;font-weight:bold;"  >
+               <h:outputText value="#{video.fragmentos.size()}" />
+        </p:column>
+  		<p:column headerText="Título"  filterBy="#{video.titulo}"  filterMatchMode="contains">
+            <h:outputText value="#{video.titulo}" />
+        </p:column>
+        <p:column headerText="Duración" styleClass="columnaTiempo"  width="60">
+            <h:outputText value="#{modeloBean.secondToHMS(video.duracion)}" />
+        </p:column>
+
+       
+
+        
+
+    
+    </p:dataTable>
+    
+    <p:dataTable id="tableFragmentos" var="fragmento" rendered="#{modeloBean.hayVideoSeleccionado}"  value="#{modeloBean.videoSeleccionado.fragmentos}"  scrollable="true" scrollHeight="154" emptyMessage="Este vídeo no tiene fragmentos asociados"  rowKey="#{fragmento.id}"  selection="#{modeloBean.fragmentoSeleccionado}" selectionMode="single" >
+        
+  <p:ajax event="rowSelect"  update=":mainpanel,:mainpanelInner,:formVideoSlider,:formScriptVideo,:formHiddenData,:blockuiControls" oncomplete="guardarPosicionDraggables(); PF('widgetVarfakeButton').jq.click()"  />  
+       
+  		<p:column headerText="Anotación" sortBy="#{fragmento.modelo.nombre}">
+            <h:outputText value="#{fragmento.modelo.nombre}" />
+        </p:column>
+        <p:column headerText="Dominio" sortBy="#{fragmento.modelo.mmodelo.nombre}">
+            <h:outputText value="#{fragmento.modelo.mmodelo.nombre}" />
+        </p:column>
+        <p:column headerText="Duración" sortBy="#{fragmento.duracion}"  width="60" styleClass="columnaTiempo">
+            <h:outputText value=" #{modeloBean.secondToHMS(fragmento.duracion)}" />
+        </p:column>
+        <p:column headerText="Inicio" sortBy="#{fragmento.inicio}" width="40" styleClass="columnaTiempo">
+            <h:outputText value="#{modeloBean.secondToHMS(fragmento.inicio)}" />
+        </p:column>
+
+        <p:column  headerText="Fin" sortBy="#{fragmento.fin}" width="40" styleClass="columnaTiempo">
+            <h:outputText value="#{modeloBean.secondToHMS(fragmento.fin)}" />
+        </p:column>
+
+       
+
+    
+    </p:dataTable>
+  
+ </h:form>	   
+
+</div>
+<div id="videoPlayerWrapper">
+<div id="fullScreenVideoPlayer" onclick="toggleVideoPlayer();" class="fullScreenIcon fullScreenIconOn"></div>
+<p:outputPanel id="blockVideoPlayer">
+<canvas id="canvas" class="whiteNoiseTv"></canvas>
+<div id="videoPlayer"> </div>
+ 
+  </p:outputPanel>
+  <p:blockUI block="blockVideoPlayer" blocked="false" id="blockuiVideoPlayer" />
+  <h:form id="formVideoSlider" >
+  <div class="controls">
+  
+  <div class="sliderBar">
+    <h:outputText id="displayRange" styleClass="displayRange" value="#{modeloBean.secondToHMS(modeloBean.fragmentoSeleccionado.inicio)} - #{modeloBean.secondToHMS(modeloBean.fragmentoSeleccionado.fin)}"/>  
+          
+           <p:commandButton id="button-mute" icon="ui-icon-volume-off" styleClass="spinnerButton buttonPlay" onclick="toggleMutedUnMuted()" />
+           <p:commandButton id="button-play-pause" icon="ui-icon-play" styleClass="spinnerButton buttonPlay" onclick="togglePlayPause()" />
+           
+                     
+        <p:slider 	for="inicio,fin"    range="true"  widgetVar="widgetVarSlider" 
+        			id="slider" onSlideEnd="onSlideEnd(event, ui)" onSlide="onSlide(event, ui)" 
+                  	minValue="0" maxValue="#{modeloBean.fragmentoSeleccionado.video.duracion}" styleClass="slider-video">
+          <p:ajax  update="displayRange,:formHiddenData,spinnerInicio,spinnerFin,:videotablesearchform"/>
+                  
+                  </p:slider>
+    <h:inputHidden id="inicio" value="#{modeloBean.fragmentoSeleccionado.inicio}" />
+    <h:inputHidden id="fin" value="#{modeloBean.fragmentoSeleccionado.fin}" />
+
+    <p:commandButton style="display:none;" value="fake()" actionListener="#{modeloBean.fake()}" widgetVar="widgetFakeSliderButton"/>
+</div>
+<div class="spinners">
+<p:outputPanel id="fragmentoEtiquetaPanel" styleClass="fragmentoEtiquetaPanel" >
+<h:panelGrid columns="2"  columnClasses="labelColumn,inputColumn" style="margin-botom:5px; width:100%;"> 
+ <p:outputLabel for="fragmentoEtiqueta" value="Anotación:"/>
+<p:inplace   editor="true" styleClass="cajaBlancaEtiquetaVideo ui-corner-all"   >  
+		    	<p:inputText id="fragmentoEtiqueta" value="#{modeloBean.fragmentoSeleccionado.modelo.nombre}">
+		    	<p:ajax update="@form, :videotablesearchform,:messagesForm" />
+    		 		<f:validator validatorId="modeloValidator"  />
+        			
+        			<f:attribute name="modo" value="editar" />    
+		    	</p:inputText>
+		    	
+                 
+    </p:inplace>
+</h:panelGrid> 
+    </p:outputPanel>
+<p:outputPanel id="spinnerFin" styleClass="controlesPrimeraBarra">
+<div class="spinnerEtiqueta">Fin:</div> 
+<div id="spinnerFinHMS" class="spinnerHMS cajaTiempo ui-corner-all">#{modeloBean.secondToHMS(modeloBean.fragmentoSeleccionado.fin)}</div>
+<div class="spinnerButtonWrapper">
+<p:commandButton icon="ui-icon-triangle-1-n" styleClass="spinnerButton" actionListener="#{modeloBean.fragmentoSeleccionado.incrementa1SegundoFin()}" update=":formVideoSlider,:formHiddenData,:videotablesearchform"/>
+<p:commandButton icon="ui-icon-triangle-1-s" styleClass="spinnerButton spinnerAbajo" actionListener="#{modeloBean.fragmentoSeleccionado.decrementa1SegundoFin()}" update=":formVideoSlider,:formHiddenData,:videotablesearchform"/>
+
+</div>
+</p:outputPanel>
+<p:outputPanel id="spinnerInicio" styleClass="controlesPrimeraBarra">
+<div class="spinnerEtiqueta">Inicio:</div> 
+<div id="spinnerInicioHMS" class="spinnerHMS cajaTiempo ui-corner-all">#{modeloBean.secondToHMS(modeloBean.fragmentoSeleccionado.inicio)}</div>
+<div class="spinnerButtonWrapper">
+<p:commandButton  icon="ui-icon-triangle-1-n" styleClass="spinnerButton" actionListener="#{modeloBean.fragmentoSeleccionado.incrementa1SegundoInicio()}" update=":formVideoSlider,:formHiddenData,:videotablesearchform" oncomplete="seekToA()"/>
+
+<p:commandButton icon="ui-icon-triangle-1-s" styleClass="spinnerButton spinnerAbajo" actionListener="#{modeloBean.fragmentoSeleccionado.decrementa1SegundoInicio()}" update=":formVideoSlider,:formHiddenData, :videotablesearchform" oncomplete="seekToA()"/>
+
+</div>
+</p:outputPanel>
+
+ <p:outputPanel id="currentTimePanel" styleClass="controlesPrimeraBarra">
+<div class="currentTimeEtiqueta">Tiempo:</div> 
+<div id="currentTime" class="spinnerHMS cajaTiempo ui-corner-all">00:00:00</div>
+
+</p:outputPanel>  
+
+</div>
+</div>
+</h:form>
+
+
+<p:blockUI block="formVideoSlider" widgetVar="bui" blocked="#{!modeloBean.hayFragmentoSeleccionado}" id="blockuiControls" />  
+</div>
+</div>
+ <h:form id="formScriptVideo">
+	<h:outputScript id="scriptVideo" rendered="#{modeloBean.hayFragmentoSeleccionado}" >
+	 
+        loadVideo('#{modeloBean.fragmentoSeleccionado.video.urlSinControles}');
+ 
+    
+	</h:outputScript>
+</h:form>
+<div id="pestanaOcultarVerticalBarra"></div>
+<div id="pestanaOcultarVertical" onclick="mostrarOcultar('#videoContainer')"><hr/><hr/></div>
+	<p:outputPanel   autoUpdate="true" id="mainpanel"  >
+<p:outputPanel id="mainpanelInner"  rendered="#{modeloBean.hayFragmentoSeleccionado}">
+		
+
+
+		<div id="sidebar">
+			<ui:repeat var="mconcepto" value="#{modeloBean.modeloSeleccionadoMConceptos}">
+				
+<div data-draggable="box" style="position:relative;"  class="metaconcepto-sidebar draggable" id="node#{mconcepto.idTemporal}"  data-idtmp="#{mconcepto.idTemporal}" > 
+	<h3 data-draggable="title" data-idtmp="#{mconcepto.idTemporal}" > #{mconcepto.nombre} </h3>
+	
+</div>
+ 
+			</ui:repeat>
+		
+	   </div>
+	 <h:outputScript id="scriptGuardarPosicionDraggables"  >
+	 
+        guardarPosicionDraggables();
+ 
+    
+	</h:outputScript>
+	 
+		<div id="main">
+		
+		
+		<ui:repeat var="concepto"
+	  				   value="#{modeloBean.modeloSeleccionadoConceptos}">
+				
+<div data-draggable="box" style="position:absolute;  top:#{concepto.posicion.y}px; left:#{concepto.posicion.x}px; text-align:center;"  class="w concepto-box" id="node#{concepto.idTemporal}"  data-idtmp="#{concepto.idTemporal}" data-tipo="concepto"> 
+	<h3 data-draggable="title"  data-idtmp="#{concepto.idTemporal}" > #{concepto.mConcepto.nombre}</h3>
+	<p style="width: 100%; text-align: center;">
+	<h:form>
+	<p:inplace   editor="true">  
+                <p:inputText size="10" value="#{concepto.etiqueta}" required="true" label="etiqueta">
+                 <p:ajax update="@form,:messagesForm"  />
+                </p:inputText>  
+    </p:inplace>  
+    </h:form> 
+	</p>
+	<div  data-idtmp="#{concepto.idTemporal}" class="deleteElement"></div>
+	<div  data-idtmp="#{concepto.idTemporal}" class="editElement"></div>
+	<p:graphicImage id="info" value="images/info32x32.png" width="32px" height="32px" styleClass="infoElement"/>
+	<div class="ep"></div>
+</div>
+ <p:overlayPanel id="overlay" at="left bottom"  for="info" showEffect="blind" hideEffect="blind" showEvent="mouseover" hideEvent="mouseout"  
+                dismissable="false" showCloseIcon="false" style="width:400px; z-index:100;">
+                 
+                  <h:dataTable id="infoConcepto" value="#{concepto.propiedades}" var="propiedad" columnClasses="labelInfoColumn,infoColumn">
+				    	<h:column >
+		             		<h:outputLabel value="#{propiedad.mPropiedad.nombre}:" /> 
+		        		</h:column> 
+				        <h:column >
+							<h:outputText rendered="#{conceptoBean.renderedTextWidget(propiedad)}" value="#{propiedad.valor}" styleClass="propiedadesStringWidget"/>
+							<h:outputText rendered="#{conceptoBean.renderedLongTextWidget(propiedad)}" value="#{propiedad.valor}" styleClass="propiedadesStringWidget"   />
+							<h:outputText rendered="#{conceptoBean.renderedLongWidget(propiedad)}" value="#{propiedad.valor}" />
+							<h:outputText rendered="#{conceptoBean.renderedDoubleWidget(propiedad)}" value="#{propiedad.valor}" />		
+							<h:outputText rendered="#{conceptoBean.renderedCalendarWidget(propiedad)}" value="#{utilBean.fechaStr(propiedad.valor,false)}" />
+							
+							<h:outputText  rendered="#{conceptoBean.renderedBooleanWidget(propiedad)}" value="#{propiedad.valor}"/>	
+					 	</h:column>
+				    </h:dataTable>
+				    
+                
+                 
+               
+                </p:overlayPanel>
+ 
+			</ui:repeat>
+			
+		<h:form id="formScriptsJsPlumb">	
+		<h:outputScript id="scriptJsPlumb">
+    		jsPlumb.reset();
+    		 initialize();
+    		 corregirCajasFuera();
+    		 
+    		 
+    	<ui:repeat var="referencia" value="#{modeloBean.modeloSeleccionadoReferencias}">
+			 		
+			 		cargando=true;
+			      	con=  jsPlumb.connect({source:"node#{referencia.referenciante.idTemporal}", target:"node#{referencia.referenciado.idTemporal}", label:"#{referencia.mReferencia.etiqueta}"});
+			      	con.mid=#{referencia.idTemporal};
+			      	
+		</ui:repeat>
+	
+	    bindJsPlumb();
+		</h:outputScript>	
+		</h:form>
+		
+	   </div>
+</p:outputPanel>
+	</p:outputPanel>
+				</div>
+  </p:outputPanel>
+	<p:confirmDialog header="Eliminar anotación" message="Está seguro que desea eliminar la anotación?" widgetVar="comfirmEliminarModelo"  showEffect="fade" hideEffect="fade" styleClass="dialogoMediano" width="450">  
+		<h:form >
+			<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+ 				<p:commandButton value="Aceptar"  ajax="false"   update=":mainpanel" actionListener="#{modeloBean.removeModeloSeleccionado()}" icon="ui-icon-check" styleClass="ui-confirmdialog-yes" />
+				<p:commandButton value="Cancelar" onclick="PF('comfirmEliminarModelo').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />       
+    		</h:panelGrid>
+    	</h:form>
+	</p:confirmDialog>  
+    
+    <p:confirmDialog header="Descartar cambios" message="Está seguro que desea descartar los cambios?" widgetVar="comfirmDescartarCambios"  showEffect="fade" styleClass="dialogoMediano" width="450">  
+    	<h:form>
+			<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+ 				<p:commandButton value="Aceptar"  onclick="PF('comfirmDescartarCambios').hide()"   update=":mainpanel,:formVideoSlider,:videotablesearchform" actionListener="#{modeloBean.refresh()}" icon="ui-icon-check" styleClass="ui-confirmdialog-yes"  />
+				<p:commandButton value="Cancelar" onclick="PF('comfirmDescartarCambios').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />       
+		    </h:panelGrid>
+    	</h:form>
+	</p:confirmDialog>  
+    
+	<p:confirmDialog header="Guardar cambios" message="Está seguro que desea guardar los cambios?" widgetVar="comfirmGuardarCambios"  showEffect="fade" styleClass="dialogoMediano" width="450" >  
+    	<h:form id="formConfirmGuardar">
+			<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+				<p:commandButton onclick="PF('comfirmGuardarCambios').hide()"  value="Aceptar"  actionListener="#{modeloBean.saveModeloSeleccionado()}"  icon="ui-icon-check" styleClass="ui-confirmdialog-yes" update=":formVideoSlider" />
+				<p:commandButton value="Cancelar" onclick="PF('comfirmGuardarCambios').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />       
+    		</h:panelGrid>
+    	</h:form>
+	</p:confirmDialog>  
+    
+    <p:dialog header="Nueva anotación" appendToBody="true"  modal="true"  draggable="true" closable="false" position="center" width="450" minHeight="300"  widgetVar="widgetCrearModelo" styleClass="dialogoMediano">
+		<h:form id="formNuevoModelo" >
+		<p:message id="messagesErrorNuevoModelo" closable="true"  for="nombre" showDetail="true" showSummary="true"  />
+		
+			 <h:outputText value="Crear una nueva anotación para el vídeo "/>
+			 <h:outputText value="#{modeloBean.videoSeleccionado.titulo}" styleClass="momentoTitulo"/>
+			 	
+		  
+		   <h:panelGrid columns="2" style="margin-top:10px;" styleClass="panelgridDialogos">
+		  <h:outputLabel value="Dominio:" for="selectMModelosNuevoModelo" />        <p:autoComplete id="selectMModelosNuevoModelo" required="true"  requiredMessage="Dominio:Error de validación: debe seleccionar un dominio." dropdown="true" value="#{modeloBean.mmodelo}"   completeMethod="#{modeloBean.completeMModelos}" var="mmodelo" itemLabel="#{mmodelo.nombre}" itemValue="#{mmodelo}" converter="MModeloConverter" styleClass="inputDialogos" forceSelection="true" cache="true" cacheTimeout="30000" queryDelay="1000" maxResults="5"  >
+		  <p:ajax />
+		  </p:autoComplete>
+			  
+		   <p:outputLabel value="Nombre:"/> <p:inputText id="nombre" value="#{modeloBean.nuevoModeloNombre}"  styleClass="inputDialogos">
+		   
+    		 		<f:validator validatorId="modeloValidator" />
+        			
+        			<f:attribute name="modo" value="crear" />    
+		   
+		   </p:inputText>
+		   <p:outputLabel value="Descripción:"/> <p:inputTextarea value="#{modeloBean.nuevoModeloDescripcion}" styleClass="inputDialogos"/>
+		   </h:panelGrid>
+		   <p:separator />
+		   
+		
+
+  
+ 	   
+		  
+		   <h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+
+		
+				
+		   																																										
+				<p:commandButton value="Aceptar"  ajax="true"    actionListener="#{modeloBean.createModelo()}"   icon="ui-icon-check" styleClass="ui-confirmdialog-yes" update=":mainpanel,:mainpanelInner,:formVideoSlider,:formScriptVideo,:formNuevoModelo,:videotablesearchform,:formHiddenData,:blockuiControls,:containerPanel" />
+				<p:commandButton value="Cancelar" onclick="PF('widgetCrearModelo').hide()" type="button" styleClass="ui-confirmdialog-no" icon="ui-icon-close" />
+			</h:panelGrid>	       
+	 		
+		</h:form> 
+	</p:dialog>
+
+	<p:dialog header="Nueva referencia" visible="false"  id="dialogoNuevaReferencia" appendToBody="true" modal="true"  closable="false" draggable="true" position="center" width="350" minHeight="108" widgetVar="widgetNuevaReferencia" >
+    	<h:form id="formnuevaReferencia">
+    		<p:outputPanel autoUpdate="true">
+    		<p:inputText style="display:none;" value="#{referenciaBean.mReferenciaSeleccionada.etiqueta}" widgetVar="MReferenciaSeleccionadaWidget" />
+    		<h:panelGrid columns="2" style="margin-bottom:10px;" styleClass="panelgridDialogos">
+    			<p:outputLabel value="Referencia" for="selectReferencia"/>
+    		 	<p:selectOneMenu id="selectReferencia" converter="MReferenciaConverter2" value="#{referenciaBean.mReferenciaSeleccionada}" styleClass="inputDialogos"> 
+        			<f:selectItem itemLabel="Seleccione una opción" itemValue="#{null}"/>	
+        			<f:selectItems value="#{referenciaBean.mReferenciasPosibles}"  var="mreferencia" itemLabel="#{mreferencia.etiqueta}" itemValue="#{mreferencia}"/> 
+              		<p:ajax update=":formnuevaReferencia" />    
+        		</p:selectOneMenu> 
+    		</h:panelGrid> 
+    		<p:separator title="Botones"/>
+    		<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+    			<p:commandButton  value="Aceptar"  oncomplete="nuevaRef(); recuperarDraggable();"  />
+    	     	<p:commandButton  value="Cancelar" onclick="jsPlumb.detach(referenciaActual); PF('widgetNuevaReferencia').hide();" type="button" />     
+    		
+    		</h:panelGrid>
+    		</p:outputPanel>
+    	</h:form>
+ 	</p:dialog> 		  
+    
+
+	
+	<p:dialog header="Editar concepto" visible="false"  appendToBody="true" modal="true"  closable="false" draggable="true" position="center" width="450" minHeight="108"  widgetVar="widgetEditarConcepto" styleClass="dialogoMediano" >
+	    <h:form id="formEditarConcepto">
+		    <p:messages id="messageEditarConcepto" closable="true" autoUpdate="true" showSummary="true"  />
+		    <h:panelGrid columns="2" styleClass="panelgridDialogos" columnClasses="labelColumn,inputColumn" style="margin-bottom:20px;">
+		    	<p:outputLabel value="Etiqueta" for="etiqueta"/>
+		    	
+		    	<p:inputText  id="etiqueta" required="true" value="#{conceptoBean.conceptoSeleccionado.etiqueta}" style="width:100% !important">
+		    		<p:ajax update="@form,messageEditarConcepto" />
+		    	</p:inputText>
+		    </h:panelGrid>
+		    <!-- <p:panel header="Propiedades" style="margin-top:10px;margin-bottom:10px;  max-height: 250px;"> -->
+				<p:outputPanel autoUpdate="true">
+				    <h:dataTable id="inputsPropiedad" value="#{conceptoBean.conceptoSeleccionado.propiedades}" var="propiedad" columnClasses="labelColumn,inputColumn">
+				    	<h:column >
+		             		<h:outputLabel  value="#{propiedad.mPropiedad.nombre}" /> 
+		        		</h:column> 
+				        <h:column >
+							<p:inputText id="inputText" rendered="#{conceptoBean.renderedTextWidget(propiedad)}" value="#{propiedad.valor}" styleClass="propiedadesStringWidget"/>
+							<p:inputTextarea id="inputlongText" rendered="#{conceptoBean.renderedLongTextWidget(propiedad)}" value="#{propiedad.valor}" styleClass="propiedadesStringWidget"  />
+							<p:inputText id="inputLong" rendered="#{conceptoBean.renderedLongWidget(propiedad)}" value="#{propiedad.valor}" >
+				
+								<p:ajax update="@form" />
+    		 					<f:validator validatorId="tipoDeDatoValidator" />
+        						<f:attribute name="tipo" value="entero" />    
+							</p:inputText>
+							<p:inputText id="inputDouble"  rendered="#{conceptoBean.renderedDoubleWidget(propiedad)}" value="#{propiedad.valor}"  >
+							
+							<p:ajax update="@form" />
+    		 					<f:validator validatorId="tipoDeDatoValidator" />
+        						<f:attribute name="tipo" value="real" />    
+							</p:inputText>		
+							<p:calendar id="inputDate" rendered="#{conceptoBean.renderedCalendarWidget(propiedad)}" value="#{propiedad.valor}" />
+							
+							<p:selectBooleanCheckbox id="inputBoolean" rendered="#{conceptoBean.renderedBooleanWidget(propiedad)}" value="#{propiedad.valor}"/>	
+					 	</h:column>
+				    </h:dataTable>
+		    	</p:outputPanel>
+		   <!--  </p:panel> -->
+		    <p:separator />
+		    <h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+		    	<p:commandButton value="Aceptar"  actionListener="#{conceptoBean.submitFormEditarConcepto()}" update="inputsPropiedad , :formEditarConcepto" />
+		    	<p:commandButton value="Cerrar" onclick="PF('widgetEditarConcepto').hide();" update="inputsPropiedad , :formEditarConcepto" />
+			</h:panelGrid>	
+	   	</h:form>
+	</p:dialog>
+	
+	
+
+	
+	<p:dialog header="Editar anotación " visible="false" appendToBody="true" modal="true"  closable="false" draggable="true" position="center" width="450" minHeight="108"  widgetVar="widgetEditarModeloActual" styleClass="dialogoMediano" >
+	    <h:form id="formEditarModeloActual">
+	 
+				
+				
+			<p:outputPanel id="panelEditarMomento" autoUpdate="true">
+	<p:message closable="true"  for="nombre" showDetail="true" showSummary="true"  />
+		   <h:panelGrid columns="2" styleClass="panelgridDialogos" columnClasses="labelColumn">
+		   
+		<p:outputLabel value="Nombre:" for="nombre"/>  	<p:inputText  id="nombre"  value="#{modeloBean.fragmentoSeleccionado.modelo.nombre}" styleClass="inputDialogos">
+		<p:ajax update="@form, :videotablesearchform" />
+    		 		<f:validator validatorId="modeloValidator" />
+        			
+        			<f:attribute name="modo" value="editar" />  
+		</p:inputText>
+		<p:outputLabel value="Descripcion:" for="etiquetaModeloDescripcion"/>  	<p:inputTextarea  id="etiquetaModeloDescripcion" value="#{modeloBean.fragmentoSeleccionado.modelo.descripcion}"  styleClass="inputDialogos"/>
+		<p:outputLabel value="Fecha de creación:" for="etiquetaFechaDeCreacion"/>  	<h:outputText  id="etiquetaFechaDeCreacion" value="#{utilBean.fechaStr(modeloBean.fragmentoSeleccionado.modelo.fechaCreacion,false)}"  styleClass="inputDialogos" />
+		 </h:panelGrid>
+		   <p:separator/>
+		   <h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+
+		   
+		   
+		 
+		    	<p:commandButton value="Aceptar"  actionListener="#{modeloBean.submitFormEditarMomento()}" update=":mainpanel,:formEditarModeloActual,:videotablesearchform:tableFragmentos,:formVideoSlider" />
+		    	<p:commandButton value="Cerrar" onclick="PF('widgetEditarModeloActual').hide();" update=":mainpanel,:formEditarModeloActual" process="@this">
+		    	<p:resetInput target="panelEditarMomento" />
+		    	</p:commandButton>
+		    	
+		    	
+		    	
+			</h:panelGrid>	
+			</p:outputPanel>
+	   	</h:form>
+	</p:dialog>
+	
+	
+	<p:dialog  header="Eliminar referencia" visible="false"   appendToBody="true" modal="true"  closable="false" draggable="true" position="center" width="450"  styleClass="dialogoMediano" minHeight="108" onHide="#{referenciaBean.deseleccionarReferenciaSeleccionada()}" widgetVar="widgetEditarReferencia" >
+    	<h:form id="formEditarReferencia">
+    	<p:outputPanel autoUpdate="true">
+   		<h:outputText value="Desea elminar la referencia #{referenciaBean.referenciaSeleccionada.mReferencia.referenciante.nombre} (#{referenciaBean.referenciaSeleccionada.mReferencia.etiqueta}) #{referenciaBean.referenciaSeleccionada.mReferencia.referenciado.nombre}?"/>
+  		  </p:outputPanel>
+  		   <p:separator title="Botones"/>  
+  		   	<h:panelGrid columns="2" styleClass="panelgridDialogosBotones">
+    		 	<p:commandButton  value="Aceptar" actionListener="#{referenciaBean.removeReferenciaSeleccionada()}" update=":formEditarReferencia" oncomplete="PF('widgetEditarReferencia').hide()"/>
+    		 	<p:commandButton  value="Cancelar" actionListener="#{referenciaBean.deseleccionarReferenciaSeleccionada()}" update=":formEditarReferencia" oncomplete="PF('widgetEditarReferencia').hide()"/>
+    		</h:panelGrid>
+    	</h:form>	
+    		  
+	</p:dialog>
+	
+	<p:dialog  header="Cargando vídeo..." modal="true" widgetVar="statusLoadVideoDialog"   
+        draggable="true" closable="true" resizable="false" >  
+        <h:panelGrid columns="1" style="text-align:center;" id="loadingVideoInfo">
+  
+    <p:graphicImage value="/images/ajax-loader.gif" />
+    
+    
+    </h:panelGrid>
+   
+       
+</p:dialog>  
+  
+ 
+
+			</f:view>
+		</ui:define>
+	</ui:composition>
+</h:body>
+</html>
